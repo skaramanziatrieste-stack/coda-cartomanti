@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Coda Cartomanti</title>
+<style>
+  html, body { margin:0; height:100%; background:#0b0014; color:#f5e6ff; font-family:Georgia, 'Times New Roman', serif; overflow:hidden; }
+  #chiamata { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  #numero { font-size:22vw; font-weight:bold; color:#ffd700; text-shadow:0 0 40px rgba(255,215,0,.55); line-height:1; }
+  #persona { font-size:5vw; margin-top:2vh; letter-spacing:.05em; }
+  #attesa { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
+  #regolamento-viewport { height:85vh; width:80vw; overflow:hidden; position:relative; }
+  #regolamento-scroll { position:absolute; width:100%; animation:scrollUp 35s linear infinite; }
+  #regolamento-scroll h1 { font-size:3.5vw; text-align:center; color:#ffd700; margin-bottom:4vh; }
+  #regolamento-scroll p { font-size:2.4vw; line-height:1.7; text-align:center; margin:0 auto 3vh; max-width:70vw; }
+  @keyframes scrollUp {
+    0%   { transform: translateY(100%); }
+    100% { transform: translateY(-120%); }
+  }
+  .hidden { display:none !important; }
+  #stato-connessione { position:fixed; bottom:8px; right:12px; font-size:12px; color:#664; opacity:.5; }
+</style>
+</head>
+<body>
+
+<div id="chiamata" class="hidden">
+  <div id="numero">--</div>
+  <div id="persona"></div>
+</div>
+
+<div id="attesa">
+  <div id="regolamento-viewport">
+    <div id="regolamento-scroll">
+      <h1>Regolamento della Serata</h1>
+      <p>
+        <!-- MODIFICA QUI IL TESTO DEL REGOLAMENTO -->
+        Benvenuti alla serata delle Cartomanti! Attendete il vostro turno: quando comparirà
+        il vostro numero, recatevi al tavolo indicato.
+      </p>
+      <p>Ogni consulto dura circa 10-15 minuti. Vi chiediamo pazienza e un po' di silenzio nei
+        pressi dei tavoli durante le letture in corso.</p>
+      <p>Se il vostro numero viene chiamato e non siete presenti, si passerà al numero
+        successivo: tenete d'occhio lo schermo!</p>
+      <p>Buona serata e buona fortuna!</p>
+    </div>
+  </div>
+</div>
+
+<div id="stato-connessione">connessione...</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const elChiamata = document.getElementById('chiamata');
+  const elAttesa = document.getElementById('attesa');
+  const elNumero = document.getElementById('numero');
+  const elPersona = document.getElementById('persona');
+  const elStato = document.getElementById('stato-connessione');
+
+  let lista = {};
+  let current = 0;
+
+  db.ref('.info/connected').on('value', snap => {
+    elStato.textContent = snap.val() ? '' : 'connessione...';
+  });
+
+  db.ref('queue/list').on('value', snap => { lista = snap.val() || {}; render(); });
+  db.ref('queue/current').on('value', snap => { current = snap.val() || 0; render(); });
+
+  function render() {
+    const persona = lista[current];
+    if (current > 0 && persona) {
+      elChiamata.classList.remove('hidden');
+      elAttesa.classList.add('hidden');
+      elNumero.textContent = current;
+      const cognomeIniziale = persona.cognome ? persona.cognome.charAt(0).toUpperCase() + '.' : '';
+      elPersona.textContent = `${persona.nome || ''} ${cognomeIniziale}`.trim();
+    } else {
+      elChiamata.classList.add('hidden');
+      elAttesa.classList.remove('hidden');
+    }
+  }
+</script>
+</body>
+</html>

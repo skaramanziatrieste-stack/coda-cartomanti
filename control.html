@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Controllo Coda</title>
+<style>
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { margin:0; min-height:100%; background:#1a0b2e; color:#fff; font-family:system-ui, sans-serif; }
+  #login, #app { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:20px; }
+  #login h2 { font-size:6vw; }
+  #pin-input { font-size:8vw; padding:12px; width:60vw; text-align:center; border-radius:12px; border:none; letter-spacing:.3em; }
+  #app { display:none; }
+  #numero-attuale { font-size:24vw; font-weight:bold; color:#ffd700; line-height:1; }
+  #prossimo { font-size:4.5vw; opacity:.85; text-align:center; min-height:2em; }
+  .btn { width:90vw; max-width:420px; padding:22px; font-size:6vw; border:none; border-radius:16px; font-weight:bold; }
+  #avanti { background:#4caf50; color:#fff; }
+  #indietro { background:#555; color:#fff; }
+  #reset { background:#8b0000; color:#fff; font-size:4vw; padding:14px; margin-top:10px; }
+  #stato-connessione { position:fixed; top:8px; right:12px; font-size:11px; color:#aaa; opacity:.6; }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <h2>Inserisci PIN</h2>
+  <input id="pin-input" type="tel" maxlength="4" inputmode="numeric" autocomplete="off">
+  <button class="btn" id="pin-ok" style="background:#4caf50;color:#fff;">Entra</button>
+</div>
+
+<div id="app">
+  <div id="numero-attuale">--</div>
+  <div id="prossimo">Prossimo: --</div>
+  <button class="btn" id="avanti">AVANTI ▶</button>
+  <button class="btn" id="indietro">◀ Indietro</button>
+  <button class="btn" id="reset">Reset Serata</button>
+</div>
+
+<div id="stato-connessione"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+  // CAMBIA QUESTO PIN prima di condividere il link con le cartomanti
+  const PIN = "1234";
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const elLogin = document.getElementById('login');
+  const elApp = document.getElementById('app');
+  const elPinInput = document.getElementById('pin-input');
+  const elPinOk = document.getElementById('pin-ok');
+  const elNumero = document.getElementById('numero-attuale');
+  const elProssimo = document.getElementById('prossimo');
+  const elStato = document.getElementById('stato-connessione');
+
+  if (localStorage.getItem('coda-pin-ok') === '1') mostraApp();
+
+  elPinOk.onclick = provaPin;
+  elPinInput.addEventListener('keydown', e => { if (e.key === 'Enter') provaPin(); });
+
+  function provaPin() {
+    if (elPinInput.value === PIN) {
+      localStorage.setItem('coda-pin-ok', '1');
+      mostraApp();
+    } else {
+      alert('PIN errato');
+    }
+  }
+
+  function mostraApp() {
+    elLogin.style.display = 'none';
+    elApp.style.display = 'flex';
+  }
+
+  let lista = {};
+  let current = 0;
+
+  db.ref('.info/connected').on('value', snap => {
+    elStato.textContent = snap.val() ? '' : 'connessione...';
+  });
+
+  db.ref('queue/list').on('value', snap => { lista = snap.val() || {}; render(); });
+  db.ref('queue/current').on('value', snap => { current = snap.val() || 0; render(); });
+
+  function render() {
+    elNumero.textContent = current;
+    const next = lista[current + 1];
+    elProssimo.textContent = next
+      ? `Prossimo: ${next.nome || ''} ${next.cognome || ''} (n. ${current + 1})`
+      : 'Prossimo: --';
+  }
+
+  document.getElementById('avanti').onclick = () => {
+    db.ref('queue/current').set(current + 1);
+  };
+  document.getElementById('indietro').onclick = () => {
+    if (current > 0) db.ref('queue/current').set(current - 1);
+  };
+  document.getElementById('reset').onclick = () => {
+    if (confirm('Azzerare la coda per iniziare una nuova serata?')) {
+      db.ref('queue').set({ current: 0, total: 0 });
+    }
+  };
+</script>
+</body>
+</html>
