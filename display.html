@@ -3,20 +3,66 @@
 <head>
 <meta charset="UTF-8">
 <title>Coda Cartomanti</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@600&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
 <style>
-  html, body { margin:0; height:100%; background:#0b0014; color:#f5e6ff; font-family:Georgia, 'Times New Roman', serif; overflow:hidden; }
-  #chiamata { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
-  #numero { font-size:22vw; font-weight:bold; color:#ffd700; text-shadow:0 0 40px rgba(255,215,0,.55); line-height:1; }
-  #persona { font-size:5vw; margin-top:2vh; letter-spacing:.05em; }
-  #attesa { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
-  #regolamento-viewport { height:85vh; width:80vw; overflow:hidden; position:relative; }
-  #regolamento-scroll { position:absolute; width:100%; animation:scrollUp 35s linear infinite; }
-  #regolamento-scroll h1 { font-size:3.5vw; text-align:center; color:#ffd700; margin-bottom:4vh; }
-  #regolamento-scroll p { font-size:2.4vw; line-height:1.7; text-align:center; margin:0 auto 3vh; max-width:70vw; }
-  @keyframes scrollUp {
-    0%   { transform: translateY(100%); }
-    100% { transform: translateY(-120%); }
+  :root {
+    --oro: #d4af37;
+    --oro-chiaro: #f5d76e;
+    --viola-scuro: #12001c;
   }
+  html, body { margin:0; height:100%; background:var(--viola-scuro); color:#f5e6ff; font-family:'EB Garamond', Georgia, serif; overflow:hidden; }
+
+  /* sfondo con stelline che luccicano, puro CSS: non rallenta mai la pagina */
+  body::before {
+    content:"";
+    position:fixed; inset:0;
+    background-image:
+      radial-gradient(2px 2px at 10% 20%, #fff, transparent),
+      radial-gradient(2px 2px at 80% 10%, #fff, transparent),
+      radial-gradient(1px 1px at 50% 50%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 30% 80%, #fff, transparent),
+      radial-gradient(2px 2px at 90% 70%, #fff, transparent),
+      radial-gradient(1px 1px at 65% 30%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 15% 60%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 45% 15%, #fff, transparent),
+      radial-gradient(1px 1px at 75% 85%, #fff, transparent);
+    opacity:.35;
+    animation: luccichio 4s ease-in-out infinite alternate;
+    pointer-events:none;
+  }
+  @keyframes luccichio { from { opacity:.18; } to { opacity:.5; } }
+
+  #chiamata { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  #numero { font-family:'Cinzel Decorative', serif; font-size:20vw; font-weight:bold; color:var(--oro-chiaro); text-shadow:0 0 40px rgba(212,175,55,.6); line-height:1; }
+  #persona { font-size:4vw; margin-top:2vh; letter-spacing:.08em; font-family:'Cinzel', serif; }
+
+  #attesa { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
+  #cornice {
+    width:74vw; max-width:1100px; padding:5vh 5vw;
+    border: 3px solid var(--oro);
+    border-radius: 18px;
+    box-shadow: 0 0 60px rgba(212,175,55,.25), inset 0 0 40px rgba(212,175,55,.08);
+    background: radial-gradient(circle at 50% 0%, rgba(90,20,120,.28), transparent 70%);
+    text-align:center;
+    position:relative;
+  }
+  #cornice::before, #cornice::after {
+    content:"✦"; color:var(--oro); font-size:1.6vw; position:absolute; left:50%; transform:translateX(-50%);
+  }
+  #cornice::before { top:-1vw; }
+  #cornice::after { bottom:-1vw; }
+
+  #titolo-regolamento { font-family:'Cinzel Decorative', serif; font-size:2.8vw; color:var(--oro-chiaro); margin:0 0 4vh; letter-spacing:.04em; }
+  #titolo-regolamento .simbolo { display:block; font-size:2vw; margin-bottom:1.2vh; opacity:.85; letter-spacing:.3em; }
+
+  #regola-corrente {
+    font-size:2.2vw; line-height:1.7; min-height:16vh;
+    display:flex; align-items:center; justify-content:center;
+    transition: opacity .7s ease;
+  }
+
   .hidden { display:none !important; }
   #stato-connessione { position:fixed; bottom:8px; right:12px; font-size:12px; color:#664; opacity:.5; }
 </style>
@@ -29,20 +75,12 @@
 </div>
 
 <div id="attesa">
-  <div id="regolamento-viewport">
-    <div id="regolamento-scroll">
-      <h1>Regolamento della Serata</h1>
-      <p>
-        <!-- MODIFICA QUI IL TESTO DEL REGOLAMENTO -->
-        Benvenuti alla serata delle Cartomanti! Attendete il vostro turno: quando comparirà
-        il vostro numero, recatevi al tavolo indicato.
-      </p>
-      <p>Ogni consulto dura circa 10-15 minuti. Vi chiediamo pazienza e un po' di silenzio nei
-        pressi dei tavoli durante le letture in corso.</p>
-      <p>Se il vostro numero viene chiamato e non siete presenti, si passerà al numero
-        successivo: tenete d'occhio lo schermo!</p>
-      <p>Buona serata e buona fortuna!</p>
+  <div id="cornice">
+    <div id="titolo-regolamento">
+      <span class="simbolo">🔮 ✧ 🌙 ✧ 🔮</span>
+      Regolamento della Serata
     </div>
+    <div id="regola-corrente"></div>
   </div>
 </div>
 
@@ -60,6 +98,7 @@
   const elNumero = document.getElementById('numero');
   const elPersona = document.getElementById('persona');
   const elStato = document.getElementById('stato-connessione');
+  const elRegola = document.getElementById('regola-corrente');
 
   let lista = {};
   let current = 0;
@@ -84,6 +123,28 @@
       elAttesa.classList.remove('hidden');
     }
   }
+
+  // --- Regolamento: fisso a schermo, una regola alla volta con dissolvenza ---
+  // MODIFICA QUI IL TESTO DEL REGOLAMENTO (una voce per riga dell'elenco)
+  const regole = [
+    "🔴 Per iscriverti alla lista, scansiona il QR Code rosso sul tavolo e compila il modulo.",
+    "🃏 Attendi il tuo turno: quando il tuo numero comparirà sullo schermo, raggiungi il tavolo indicato.",
+    "👁️ Se il tuo numero viene chiamato e non sei presente, si passerà al numero successivo: tieni d'occhio lo schermo!",
+    "✨ Buona serata e buona fortuna!"
+  ];
+  let indiceRegola = 0;
+
+  function mostraRegola() {
+    elRegola.style.opacity = 0;
+    setTimeout(() => {
+      elRegola.textContent = regole[indiceRegola];
+      elRegola.style.opacity = 1;
+      indiceRegola = (indiceRegola + 1) % regole.length;
+    }, 700);
+  }
+
+  mostraRegola();
+  setInterval(mostraRegola, 7000);
 </script>
 </body>
 </html>
