@@ -5,7 +5,7 @@
 <title>Coda Cartomanti</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@600&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@600;700&family=Playfair+Display:wght@700;900&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
 <style>
   :root {
     --oro: #d4af37;
@@ -14,7 +14,6 @@
   }
   html, body { margin:0; height:100%; background:var(--viola-scuro); color:#f5e6ff; font-family:'EB Garamond', Georgia, serif; overflow:hidden; }
 
-  /* sfondo con stelline che luccicano, puro CSS: non rallenta mai la pagina */
   body::before {
     content:"";
     position:fixed; inset:0;
@@ -34,9 +33,20 @@
   }
   @keyframes luccichio { from { opacity:.18; } to { opacity:.5; } }
 
+  #brand {
+    position: fixed; top: 3.5vh; left:50%; transform:translateX(-50%);
+    font-family:'Cinzel Decorative', serif;
+    font-size: 2vw;
+    color: var(--oro-chiaro);
+    letter-spacing:.25em;
+    text-transform: uppercase;
+    text-shadow: 0 0 20px rgba(212,175,55,.5);
+    white-space: nowrap;
+  }
+
   #chiamata { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
-  #numero { font-family:'Cinzel Decorative', serif; font-size:20vw; font-weight:bold; color:var(--oro-chiaro); text-shadow:0 0 40px rgba(212,175,55,.6); line-height:1; }
-  #persona { font-size:4vw; margin-top:2vh; letter-spacing:.08em; font-family:'Cinzel', serif; }
+  #numero { font-family:'Playfair Display', serif; font-weight:900; font-size:24vw; color:var(--oro-chiaro); text-shadow:0 0 40px rgba(212,175,55,.6); line-height:1; }
+  #persona { font-size:6vw; font-weight:700; margin-top:2vh; letter-spacing:.06em; font-family:'Cinzel', serif; }
 
   #attesa { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
   #cornice {
@@ -54,20 +64,35 @@
   #cornice::before { top:-1vw; }
   #cornice::after { bottom:-1vw; }
 
-  #titolo-regolamento { font-family:'Cinzel Decorative', serif; font-size:2.8vw; color:var(--oro-chiaro); margin:0 0 4vh; letter-spacing:.04em; }
-  #titolo-regolamento .simbolo { display:block; font-size:2vw; margin-bottom:1.2vh; opacity:.85; letter-spacing:.3em; }
+  #titolo-regolamento { font-family:'Cinzel Decorative', serif; font-size:2.4vw; color:var(--oro-chiaro); margin:0 0 4vh; letter-spacing:.04em; }
+  #titolo-regolamento .simbolo { display:block; font-size:1.8vw; margin-bottom:1.2vh; opacity:.85; letter-spacing:.3em; }
 
   #regola-corrente {
-    font-size:2.2vw; line-height:1.7; min-height:16vh;
-    display:flex; align-items:center; justify-content:center;
+    min-height:18vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.4vh;
     transition: opacity .7s ease;
   }
+  .regola-icona { font-size:3vw; line-height:1; }
+  .regola-titolo {
+    font-family:'Cinzel', serif; font-weight:700; font-size:2.6vw;
+    color: var(--oro-chiaro); text-transform:uppercase; letter-spacing:.08em;
+  }
+  .regola-testo {
+    font-family:'EB Garamond', serif; font-size:1.9vw; line-height:1.65;
+    color:#efe3f5; max-width:56vw;
+  }
+
+  #puntini { display:flex; gap:.9vw; justify-content:center; margin-top:3.5vh; }
+  .puntino { width:.85vw; height:.85vw; border-radius:50%; border:1.5px solid var(--oro); opacity:.45; transition: opacity .4s, background-color .4s; }
+  .puntino.attivo { background-color: var(--oro); opacity:1; }
 
   .hidden { display:none !important; }
   #stato-connessione { position:fixed; bottom:8px; right:12px; font-size:12px; color:#664; opacity:.5; }
 </style>
 </head>
 <body>
+
+<div id="brand">✦ Serata Cartomante ✦</div>
 
 <div id="chiamata" class="hidden">
   <div id="numero">--</div>
@@ -80,7 +105,12 @@
       <span class="simbolo">🔮 ✧ 🌙 ✧ 🔮</span>
       Regolamento della Serata
     </div>
-    <div id="regola-corrente"></div>
+    <div id="regola-corrente">
+      <div class="regola-icona"></div>
+      <div class="regola-titolo"></div>
+      <div class="regola-testo"></div>
+    </div>
+    <div id="puntini"></div>
   </div>
 </div>
 
@@ -99,20 +129,45 @@
   const elPersona = document.getElementById('persona');
   const elStato = document.getElementById('stato-connessione');
   const elRegola = document.getElementById('regola-corrente');
+  const elRegolaIcona = document.querySelector('.regola-icona');
+  const elRegolaTitolo = document.querySelector('.regola-titolo');
+  const elRegolaTesto = document.querySelector('.regola-testo');
+  const elPuntini = document.getElementById('puntini');
 
   let lista = {};
   let current = 0;
+  let mostraChiamata = false;
+  let timerScomparsa = null;
+
+  let DURATA_CHIAMATA_MS = 3 * 60 * 1000; // 3 minuti
 
   db.ref('.info/connected').on('value', snap => {
     elStato.textContent = snap.val() ? '' : 'connessione...';
   });
 
   db.ref('queue/list').on('value', snap => { lista = snap.val() || {}; render(); });
-  db.ref('queue/current').on('value', snap => { current = snap.val() || 0; render(); });
+
+  db.ref('queue/current').on('value', snap => {
+    const nuovoCurrent = snap.val() || 0;
+    if (nuovoCurrent !== current) {
+      current = nuovoCurrent;
+      clearTimeout(timerScomparsa);
+      if (current > 0) {
+        mostraChiamata = true;
+        timerScomparsa = setTimeout(() => {
+          mostraChiamata = false;
+          render();
+        }, DURATA_CHIAMATA_MS);
+      } else {
+        mostraChiamata = false;
+      }
+    }
+    render();
+  });
 
   function render() {
     const persona = lista[current];
-    if (current > 0 && persona) {
+    if (current > 0 && persona && mostraChiamata) {
       elChiamata.classList.remove('hidden');
       elAttesa.classList.add('hidden');
       elNumero.textContent = current;
@@ -124,21 +179,29 @@
     }
   }
 
-  // --- Regolamento: fisso a schermo, una regola alla volta con dissolvenza ---
-  // MODIFICA QUI IL TESTO DEL REGOLAMENTO (una voce per riga dell'elenco)
   const regole = [
-    "🔴 Per iscriverti alla lista, scansiona il QR Code rosso sul tavolo e compila il modulo.",
-    "🃏 Attendi il tuo turno: quando il tuo numero comparirà sullo schermo, raggiungi il tavolo indicato.",
-    "👁️ Se il tuo numero viene chiamato e non sei presente, si passerà al numero successivo: tieni d'occhio lo schermo!",
-    "✨ Buona serata e buona fortuna!"
+    { icona: "🔴", titolo: "Iscrizione", testo: "Scansiona il QR Code rosso sul tavolo e compila il modulo per entrare in lista." },
+    { icona: "🃏", titolo: "Il tuo turno", testo: "Quando il tuo numero comparirà sullo schermo, raggiungi il tavolo indicato." },
+    { icona: "👁️", titolo: "Assenza", testo: "Se non sei presente alla chiamata, si passa al numero successivo: tieni d'occhio lo schermo." },
+    { icona: "✨", titolo: "Buona fortuna", testo: "Buona serata, e che le carte siano con te!" }
   ];
   let indiceRegola = 0;
+
+  regole.forEach(() => {
+    const p = document.createElement('span');
+    p.className = 'puntino';
+    elPuntini.appendChild(p);
+  });
 
   function mostraRegola() {
     elRegola.style.opacity = 0;
     setTimeout(() => {
-      elRegola.textContent = regole[indiceRegola];
+      const r = regole[indiceRegola];
+      elRegolaIcona.textContent = r.icona;
+      elRegolaTitolo.textContent = r.titolo;
+      elRegolaTesto.textContent = r.testo;
       elRegola.style.opacity = 1;
+      [...elPuntini.children].forEach((p, i) => p.classList.toggle('attivo', i === indiceRegola));
       indiceRegola = (indiceRegola + 1) % regole.length;
     }, 700);
   }
