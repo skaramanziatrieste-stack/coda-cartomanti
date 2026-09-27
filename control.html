@@ -12,6 +12,7 @@
   #pin-input { font-size:8vw; padding:12px; width:60vw; text-align:center; border-radius:12px; border:none; letter-spacing:.3em; }
   #app { display:none; }
   #numero-attuale { font-size:24vw; font-weight:bold; color:#ffd700; line-height:1; }
+  #persona-attuale { font-size:5.5vw; font-weight:700; text-align:center; min-height:1.3em; }
   #prossimo { font-size:4.5vw; opacity:.85; text-align:center; min-height:2em; }
   .btn { width:90vw; max-width:420px; padding:22px; font-size:6vw; border:none; border-radius:16px; font-weight:bold; }
   #avanti { background:#4caf50; color:#fff; }
@@ -29,6 +30,7 @@
 
 <div id="app">
   <div id="numero-attuale">--</div>
+  <div id="persona-attuale">--</div>
   <div id="prossimo">Prossimo: --</div>
   <button class="btn" id="avanti">AVANTI ▶</button>
   <button class="btn" id="indietro">◀ Indietro</button>
@@ -50,6 +52,7 @@
   const elPinInput = document.getElementById('pin-input');
   const elPinOk = document.getElementById('pin-ok');
   const elNumero = document.getElementById('numero-attuale');
+  const elPersonaAttuale = document.getElementById('persona-attuale');
   const elProssimo = document.getElementById('prossimo');
   const elStato = document.getElementById('stato-connessione');
 
@@ -84,6 +87,12 @@
 
   function render() {
     elNumero.textContent = current;
+
+    const persona = lista[current];
+    elPersonaAttuale.textContent = (current > 0 && persona)
+      ? `${persona.nome || ''} ${persona.cognome || ''}`.trim()
+      : '--';
+
     const next = lista[current + 1];
     elProssimo.textContent = next
       ? `Prossimo: ${next.nome || ''} ${next.cognome || ''} (n. ${current + 1})`
