@@ -16,7 +16,6 @@
   .btn { width:90vw; max-width:420px; padding:22px; font-size:6vw; border:none; border-radius:16px; font-weight:bold; }
   #avanti { background:#4caf50; color:#fff; }
   #indietro { background:#555; color:#fff; }
-  #reset { background:#8b0000; color:#fff; font-size:4vw; padding:14px; margin-top:10px; }
   #stato-connessione { position:fixed; top:8px; right:12px; font-size:11px; color:#aaa; opacity:.6; }
 </style>
 </head>
@@ -33,7 +32,6 @@
   <div id="prossimo">Prossimo: --</div>
   <button class="btn" id="avanti">AVANTI ▶</button>
   <button class="btn" id="indietro">◀ Indietro</button>
-  <button class="btn" id="reset">Reset Serata</button>
 </div>
 
 <div id="stato-connessione"></div>
@@ -42,7 +40,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script>
-  // CAMBIA QUESTO PIN prima di condividere il link con le cartomanti
   const PIN = "1234";
 
   firebase.initializeApp(firebaseConfig);
@@ -98,11 +95,6 @@
   };
   document.getElementById('indietro').onclick = () => {
     if (current > 0) db.ref('queue/current').set(current - 1);
-  };
-  document.getElementById('reset').onclick = () => {
-    if (confirm('Azzerare la coda per iniziare una nuova serata?')) {
-      db.ref('queue').set({ current: 0, total: 0 });
-    }
   };
 </script>
 </body>
